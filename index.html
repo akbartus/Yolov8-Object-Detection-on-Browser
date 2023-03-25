@@ -1,0 +1,29 @@
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>YOLOv8 ONNX Serving: Object Detection on the Browser</title>
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+    <script src="js/opencv.js"></script>
+    <link href="css/style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div id="header">
+        <h1>YOLOv8 Object Detection Example</h1>
+        <p>Serving : <code class="code">yolov8n.onnx</code></p>
+        <p>Size : <code class="code">416x416</code></p>
+    </div>
+    <div id="root">
+        <div class="App">      
+            <div class="content">              
+                <video id="video" autoPlay="true" playsInline="true" muted="true"></video>
+                <canvas width="416" height="416"></canvas>
+            </div> 
+        </div>
+    </div>
+    <div>
+    <button id="runInference">Run Inference</button>
+    <button id="stopInference">Stop Inference</button>
+    <script src="js/main.js"></script>
+</body>
+</html>

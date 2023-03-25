@@ -1,0 +1,67 @@
+.content>canvas {
+    height: 100%;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 100%
+}
+
+button {
+    font-size: 20px;
+    background-color: #000;
+    color: #fff;
+    cursor: pointer;
+    position: absolute;
+    top: 90%;
+    left: 50%;
+    margin-top: -50px;
+    margin-left: -50px;
+    width: 150px;
+    height: 50px;
+
+
+}
+
+#stopInference{
+    display: none;
+}
+
+button:hover {
+    background-color: #fff;
+    border: 2px solid #000;
+    color: #000
+}
+
+#header{
+    position: absolute;
+    z-index: 2;
+    width: 100%;
+    text-align: center;
+}
+
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, Helvetica, Arial, sans-serif;
+    width: 100%;
+
+}
+
+code {
+    font-family: source-code-pro, Menlo, Monaco, Consolas, Courier New, monospace
+}
+
+
+body {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    position:relative;
+  }
+  
+  video {
+    width:100%; height:100%;
+    object-fit: cover;
+  }
