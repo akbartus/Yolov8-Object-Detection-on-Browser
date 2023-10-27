@@ -3,7 +3,7 @@
 </p>
 
 
-This is adapted and reduced version of YOLOv8 object segmentation (powered by onnx) created by <a href="https://github.com/Hyuto/yolov8-onnxruntime-web">Wahyu Setianto</a>. This version can be run on JavaScript without any frameworks and demonstrates object detection using web camera.
+This is adapted and rewritten version of YOLOv8 object segmentation (powered by onnx) created by <a href="https://github.com/Hyuto/yolov8-onnxruntime-web">Wahyu Setianto</a>. This version can be run on JavaScript without any frameworks and demonstrates object detection using web camera.
 
 ## Setup
 To see it at work, just run index.html file. 
