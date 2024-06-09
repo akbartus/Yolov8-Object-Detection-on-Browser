@@ -39,7 +39,8 @@ To use another YOLOv8 model, download it from Ultralytics and convert it to onnx
 Please update labels object inside of main.js file.
 
 ## Updates
-Added another web camera based example for YOLOv8 running without any frameworks. In this example there is no need for NMS operator, but it is slower. See:  "yolov8_onnx_without_nms" folder. 
+- Added another web camera based example for YOLOv8 running without any frameworks. In this example there is no need for NMS operator, but it is slower. See:  "yolov8_onnx_without_nms" folder.
+- Added TFJS version of YOLOv8 which is faster and more robust. See: "tfjs_version" folder.
 
 ## Demo
 To see demo, please visit the <a href="https://yolov8-object-detection.glitch.me/">following page</a>
