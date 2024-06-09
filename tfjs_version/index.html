@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>YOLOv8 Object Detection On Browser: TensroflowJs</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js"></script>
+
+    <style>
+        body,
+        html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #header {
+            position: absolute;
+            z-index: 2;
+            top: 0px;
+            width: 100%;
+            text-align: center;
+        }
+
+        #main {
+            position: relative;
+            width: 640px;
+            height: 480px;
+        }
+
+        #webcam,
+        #outputCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        #outputCanvas {
+            z-index: 2;
+            /* Ensure canvas is on top of video */
+        }
+
+        button {
+            font-size: 20px;
+            background-color: #000;
+            color: #fff;
+            cursor: pointer;
+            position: absolute;
+            top: 95%;
+            left: 50%;
+            margin-top: -50px;
+            margin-left: -50px;
+            width: 150px;
+            height: 50px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="header">
+        <h1>YOLOv8 Object Detection Example</h1>
+        <p>Serving : <code class="code">yolov8n.tfjs</code>, Size : <code class="code">640x640</code></p>
+    </div>
+    <div id="main">
+        <video id="webcam" autoplay playsinline width="640" height="480"></video>
+        <canvas id="outputCanvas"></canvas>
+    </div>
+    <button id="runInference">Run Inference</button>
+    <script>
+        const classNames = {
+            0: "person",
+            1: "bicycle",
+            2: "car",
+            3: "motorcycle",
+            4: "airplane",
+            5: "bus",
+            6: "train",
+            7: "truck",
+            8: "boat",
+            9: "traffic light",
+            10: "fire hydrant",
+            11: "stop sign",
+            12: "parking meter",
+            13: "bench",
+            14: "bird",
+            15: "cat",
+            16: "dog",
+            17: "horse",
+            18: "sheep",
+            19: "cow",
+            20: "elephant",
+            21: "bear",
+            22: "zebra",
+            23: "giraffe",
+            24: "backpack",
+            25: "umbrella",
+            26: "handbag",
+            27: "tie",
+            28: "suitcase",
+            29: "frisbee",
+            30: "skis",
+            31: "snowboard",
+            32: "sports ball",
+            33: "kite",
+            34: "baseball bat",
+            35: "baseball glove",
+            36: "skateboard",
+            37: "surfboard",
+            38: "tennis racket",
+            39: "bottle",
+            40: "wine glass",
+            41: "cup",
+            42: "fork",
+            43: "knife",
+            44: "spoon",
+            45: "bowl",
+            46: "banana",
+            47: "apple",
+            48: "sandwich",
+            49: "orange",
+            50: "broccoli",
+            51: "carrot",
+            52: "hot dog",
+            53: "pizza",
+            54: "donut",
+            55: "cake",
+            56: "chair",
+            57: "couch",
+            58: "potted plant",
+            59: "bed",
+            60: "dining table",
+            61: "toilet",
+            62: "tv",
+            63: "laptop",
+            64: "mouse",
+            65: "remote",
+            66: "keyboard",
+            67: "cell phone",
+            68: "microwave",
+            69: "oven",
+            70: "toaster",
+            71: "sink",
+            72: "refrigerator",
+            73: "book",
+            74: "clock",
+            75: "vase",
+            76: "scissors",
+            77: "teddy bear",
+            78: "hair drier",
+            79: "toothbrush"
+        };
+
+        const TARGET_WIDTH = 640;
+        const TARGET_HEIGHT = 640;
+        let model;
+
+        async function loadModel() {
+            tf.setBackend('webgl');
+            model = await tf.loadGraphModel('./yolov8x_web_model/model.json');
+
+        }
+
+        async function runModel(tensor) {
+            if (!model) await loadModel();
+            return model.predict(tensor);
+        }
+
+        async function processWebcamFrame() {
+            const video = document.getElementById('webcam');
+            const tensor = await webcamToTensor(video);
+            // Measure inference time
+            const startTime = performance.now();
+            const predictions = await runModel(tensor);
+            const endTime = performance.now();
+            const inferenceTime = endTime - startTime;
+            console.log(`Inference Time: ${inferenceTime.toFixed(2)} ms`);
+            const detections = processPredictions(predictions, classNames);
+            await drawBoundingBoxes(video, detections);
+
+        }
+
+        function extractSelectedPredictions(indices, boxes, labels, classNames) {
+            return indices.map(i => {
+                const box = boxes.slice([i, 0], [1, -1]).squeeze().arraySync();
+                const label = labels.slice([i], [1]).arraySync()[0];
+                return { box, label: classNames[label] };
+            });
+        }
+
+        async function webcamToTensor(videoElement) {
+            const canvas = document.createElement('canvas');
+            canvas.width = TARGET_WIDTH;
+            canvas.height = TARGET_HEIGHT;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+            ctx.drawImage(videoElement, 0, 0, TARGET_WIDTH, TARGET_HEIGHT);
+            const imageData = ctx.getImageData(0, 0, TARGET_WIDTH, TARGET_HEIGHT);
+            const tensor = tf.browser.fromPixels(imageData);
+
+            return tf.cast(tensor, 'float32').div(tf.scalar(255)).expandDims(0);
+        }
+
+        function processPredictions(predictions, classNames) {
+            return tf.tidy(() => {
+                const transRes = predictions.transpose([0, 2, 1]);
+                const boxes = calculateBoundingBoxes(transRes);
+                const [scores, labels] = calculateScoresAndLabels(transRes, classNames);
+
+                const indices = tf.image.nonMaxSuppression(boxes, scores, predictions.shape[2], 0.45, 0.2).arraySync();
+                return extractSelectedPredictions(indices, boxes, labels, classNames);
+            });
+        }
+
+        function calculateBoundingBoxes(transRes) {
+            const [xCenter, yCenter, width, height] = [
+                transRes.slice([0, 0, 0], [-1, -1, 1]),
+                transRes.slice([0, 0, 1], [-1, -1, 1]),
+                transRes.slice([0, 0, 2], [-1, -1, 1]),
+                transRes.slice([0, 0, 3], [-1, -1, 1])
+            ];
+
+            const topLeftX = tf.sub(xCenter, tf.div(width, 2));
+            const topLeftY = tf.sub(yCenter, tf.div(height, 2));
+            return tf.concat([topLeftX, topLeftY, width, height], 2).squeeze();
+        }
+
+        function calculateScoresAndLabels(transRes, classNames) {
+            const rawScores = transRes.slice([0, 0, 4], [-1, -1, Object.keys(classNames).length]).squeeze(0);
+            return [rawScores.max(1), rawScores.argMax(1)];
+        }
+
+        async function drawBoundingBoxes(imageElement, detections) {
+
+            const canvas = document.getElementById('outputCanvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            canvas.width = imageElement.width;
+            canvas.height = imageElement.height;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const resizeScale = Math.min(TARGET_WIDTH / canvas.width, TARGET_HEIGHT / canvas.height);
+            const dx = (TARGET_WIDTH - canvas.width * resizeScale) / 2;
+            const dy = (TARGET_HEIGHT - canvas.height * resizeScale) / 2;
+
+            detections.forEach(({ box, label }) => {
+                let [topLeftX, topLeftY, width, height] = box;
+                topLeftX = topLeftX / resizeScale - dx / resizeScale;
+                topLeftY = topLeftY / resizeScale - dy / resizeScale;
+                width /= resizeScale;
+                height /= resizeScale;
+
+                ctx.strokeStyle = 'red';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(topLeftX, topLeftY, width, height);
+                ctx.fillStyle = 'red';
+                ctx.font = '20px Arial';
+                ctx.fillText(label, topLeftX, topLeftY - 7);
+            });
+
+        }
+
+        async function setupWebcam() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                const video = document.getElementById('webcam');
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+            } else {
+                console.error('getUserMedia is not supported');
+            }
+        }
+
+        // Start webcam processing when the DOM content is loaded
+        document.querySelector('#runInference').addEventListener('click', async () => {
+            await loadModel();
+            await setupWebcam();
+            setInterval(processWebcamFrame, 100); // Process each frame every second
+        });
+
+
+    </script>
+</body>
+
+</html>
