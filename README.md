@@ -44,4 +44,4 @@ Please update labels object inside of main.js file.
 
 ## Demo
 To see demo, please visit the <a href="https://yolov8-object-detection.glitch.me/">following page</a>.
-To see TFJS version, please visit <a href="https://pickle-pinto-feverfew.glitch.me/tfjs_version/">this page</a>.
+To see TFJS version, please visit <a href="https://yolov8-objectdetection.glitch.me/tfjs_version">this page</a>.
